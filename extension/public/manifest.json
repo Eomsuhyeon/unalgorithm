@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "umalgoritm",
+  "version": "0.1.0",
+  "description": "AI 기반 YouTube 콘텐츠 큐레이션",
+  "permissions": ["storage", "activeTab", "scripting"],
+  "host_permissions": ["https://www.youtube.com/*"],
+  "background": {
+    "service_worker": "background/service_worker.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.youtube.com/*"],
+      "js": ["content/content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup/index.html"
+  },
+  "icons": {
+    "128": "icons/icon128.png"
+  }
+}
