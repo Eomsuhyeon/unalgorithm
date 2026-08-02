@@ -4,6 +4,10 @@ import { resolve } from "path";
 
 export default defineConfig({
   plugins: [react()],
+  // popup/index.html의 출력 경로가 manifest.json의 "popup/index.html"과 일치하도록
+  // root를 src/popup으로 맞춘다. 다른 엔트리(content, service_worker)는 절대 경로로
+  // 지정하므로 root 변경의 영향을 받지 않는다.
+  root: resolve(__dirname, "src"),
   build: {
     rollupOptions: {
       input: {
@@ -15,8 +19,8 @@ export default defineConfig({
         entryFileNames: "[name]/[name].js",
       },
     },
-    outDir: "dist",
+    outDir: resolve(__dirname, "dist"),
     emptyOutDir: true,
   },
-  publicDir: "public",
+  publicDir: resolve(__dirname, "public"),
 });
