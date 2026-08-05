@@ -96,3 +96,34 @@ export type RuntimeMessage =
   | GetReportStatsMessage
   | ReportStatsMessage
   | GetPreferenceProfileMessage;
+
+
+// 사용자 설정 및 선호도 타입
+export interface UserPreferences {
+  selectedCategories: string[]; // 선택된 카테고리 목록
+  diversityLevel: number;       // 다양성 다이얼/슬라이더 값 (예: 1~5)
+  customKeywords: string[];     // 사용자 지정 키워드
+}
+
+// 키워드 점수 데이터
+export interface KeywordScores {
+  [keyword: string]: number;    // 예: { "코딩": 12.5, "운동": 5.0 }
+}
+
+// 추천 이력 아이템
+export interface RecommendationHistoryItem {
+  id: string;
+  videoId: string;
+  title: string;
+  category: string;
+  timestamp: number;
+  actionTaken?: 'clicked' | 'ignored' | 'filtered';
+}
+
+// 사용자 행동 로그
+export interface ActionLog {
+  id: string;
+  actionType: 'click' | 'filter_apply' | 'preference_change' | 'dial_change';
+  details: Record<string, any>;
+  timestamp: number;
+}
