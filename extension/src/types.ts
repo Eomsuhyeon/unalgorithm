@@ -22,6 +22,7 @@ export interface PreferenceProfile {
   novelty_level: number; // 0 ~ 1
   popularity_weight: number; // 0 ~ 1
   strictness: number; // 0 ~ 1
+  profile_text: string; // [추가: 수현] Curator 임베딩 검색에 쓰는 취향 요약 문장 (백엔드 planner.py 참고)
 }
 
 export const DEFAULT_PREFERENCE_PROFILE: PreferenceProfile = {
@@ -32,6 +33,7 @@ export const DEFAULT_PREFERENCE_PROFILE: PreferenceProfile = {
   novelty_level: 0.5,
   popularity_weight: 0.5,
   strictness: 0.5,
+  profile_text: "",
 };
 
 export type FeedbackType = "like" | "dislike" | "skip" | "click";

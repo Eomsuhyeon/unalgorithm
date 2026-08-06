@@ -19,9 +19,29 @@ const STORAGE_KEYS = {
   PROFILE: "preferenceProfile",
   EVENT_LOG: "userEventLog",
   KEYWORD_SCORES: "keywordScores",
+  USER_ID: "localUserId",
 } as const;
 
 const EVENT_LOG_LIMIT = 500;
+
+/**
+ * [추가: 수현]
+ * 로그인 없이 이 브라우저(확장 설치)를 구분하기 위한 로컬 사용자 ID.
+ * 최초 호출 시 한 번 생성해서 저장하고, 이후에는 항상 같은 값을 재사용한다.
+ * 백엔드 API(/api/planner, /api/recommend, /api/feedback) 호출할 때
+ * "이게 누구 데이터인지" 구분하는 용도로 쓴다.
+ */
+export async function getOrCreateUserId(): Promise<string> {
+  const result = await chrome.storage.local.get(STORAGE_KEYS.USER_ID);
+  const existingId = result[STORAGE_KEYS.USER_ID] as string | undefined;
+  if (existingId) {
+    return existingId;
+  }
+
+  const newId = crypto.randomUUID();
+  await chrome.storage.local.set({ [STORAGE_KEYS.USER_ID]: newId });
+  return newId;
+}
 
 export async function getPreferenceProfile(): Promise<PreferenceProfile> {
   const result = await chrome.storage.local.get(STORAGE_KEYS.PROFILE);

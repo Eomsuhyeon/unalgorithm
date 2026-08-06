@@ -5,12 +5,13 @@
  * 추천 결과/영상 목록 캐싱을 담당한다.
  */
 
-import { requestPreferenceProfile } from "./llmClient";
+import { fetchPreferenceProfileFromServer, requestPreferenceProfile } from "./llmClient";
 import {
   applyFeedbackToKeywords,
   computeReportStats,
 } from "../storage/scoring";
 import {
+  getOrCreateUserId,
   getPreferenceProfile,
   logUserEvent,
   savePreferenceProfile,
@@ -30,7 +31,10 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, _sender, sendResp
     }
 
     case "REQUEST_PREFERENCE_PROFILE": {
-      requestPreferenceProfile(message.payload.text)
+      // [팀 조율 반영] 서버 DB가 정본이므로, 로컬 user_id로 서버에 새 프로필을 만들고
+      // 응답을 chrome.storage 캐시에도 반영한다.
+      getOrCreateUserId()
+        .then((userId) => requestPreferenceProfile(userId, message.payload.text))
         .then(async (profile) => {
           await savePreferenceProfile(profile);
           sendResponse({ type: "PREFERENCE_PROFILE_UPDATED", payload: profile });
@@ -42,7 +46,26 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, _sender, sendResp
     }
 
     case "GET_PREFERENCE_PROFILE": {
-      getPreferenceProfile().then((profile) => sendResponse(profile));
+      // [팀 조율 반영] "서버가 정본, chrome.storage는 캐시" 원칙:
+      // 1. 서버에 최신 프로필을 물어본다
+      // 2. 성공하면 캐시를 갱신하고 그 값을 돌려준다
+      // 3. 서버가 없거나(첫 사용자) 오프라인이면 로컬 캐시로 대체한다 (화면이 멈추지 않도록)
+      getOrCreateUserId()
+        .then((userId) => fetchPreferenceProfileFromServer(userId))
+        .then(async (serverProfile) => {
+          if (serverProfile) {
+            await savePreferenceProfile(serverProfile);
+            sendResponse(serverProfile);
+          } else {
+            const cached = await getPreferenceProfile();
+            sendResponse(cached);
+          }
+        })
+        .catch(async () => {
+          // 서버 연결 실패(오프라인 등) -> 캐시라도 보여준다
+          const cached = await getPreferenceProfile();
+          sendResponse(cached);
+        });
       return true;
     }
 
