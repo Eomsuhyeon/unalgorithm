@@ -1,16 +1,21 @@
 """
 [API Routes]
 이 파일이 하는 일:
-확장 프로그램(llmClient.ts)이 호출하는 API 엔드포인트 3개를 정의하고,
+확장 프로그램(llmClient.ts)이 호출하는 API 엔드포인트들을 정의하고,
 Planner -> Sourcer -> Curator -> Ranker 파이프라인을 순서대로 실행해서
 최종 추천 리스트를 만들어주는 코드.
 
-- POST /planner   : 자연어 입력 -> Preference Profile(JSON)
-- POST /recommend : Preference Profile -> 최종 추천 영상 리스트
-- POST /feedback  : 좋아요/싫어요/스킵 저장
+실제 요청 경로는 main.py에서 이 router에 "/api" 프리픽스를 붙이므로
+아래 경로들은 최종적으로 /api/planner, /api/recommend ... 가 된다.
+
+- POST /planner       : 자연어 입력 -> Preference Profile(JSON) 생성/갱신 (서버 DB에 저장)
+- GET  /planner/{id}  : 저장된 Preference Profile 조회
+                         ("서버 DB가 정본, 확장의 chrome.storage는 캐시" 원칙의 핵심 엔드포인트)
+- POST /recommend     : Preference Profile -> 최종 추천 영상 리스트
+- POST /feedback      : 좋아요/싫어요/스킵 저장
 """
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -56,6 +61,20 @@ def planner(request: PlannerRequest, db: Session = Depends(get_db)):
     db.commit()
 
     return new_profile
+
+
+@router.get("/planner/{user_id}", response_model=PreferenceProfile)
+def get_profile(user_id: str, db: Session = Depends(get_db)):
+    """확장 프로그램이 최신 프로필을 서버에 물어볼 때 사용 (캐시 동기화용)."""
+    profile_row = (
+        db.query(PreferenceProfileModel)
+        .filter(PreferenceProfileModel.user_id == user_id)
+        .first()
+    )
+    if not profile_row:
+        raise HTTPException(status_code=404, detail="프로필이 아직 없습니다")
+
+    return PreferenceProfile(**profile_row.profile_json)
 
 
 # ---------- /recommend ----------

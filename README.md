@@ -1,4 +1,4 @@
-# umalgoritm
+# unalgoritm
 
 AI 기반 YouTube 콘텐츠 큐레이션 Chrome Extension.
 기존 YouTube 추천 피드를 사용자의 자연어 선호와 의미적 유사도 기반으로 재해석해 개인화 추천을 제공합니다.
